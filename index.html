@@ -1,0 +1,239 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>時光節拍</title>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      background: linear-gradient(to bottom, #111, #222);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: url('backgrounds/summer_music_festival.jpg') no-repeat center center/cover;
+      opacity: 0.4;
+      z-index: -1;
+    }
+    .song-selector {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .song-button {
+      background: #ff4081;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 10px;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+    .song-button:hover { background: #e91e63; }
+
+    .drum-container {
+      position: relative;
+      width: 240px;
+      height: 240px;
+      margin: 40px auto 20px;
+    }
+    .drum {
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, #ffcc00, #ff8c00);
+      border-radius: 50%;
+      box-shadow: 0 0 20px #ffd700;
+      animation: pulse 1s infinite ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: #222;
+      cursor: pointer;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); box-shadow: 0 0 25px #ffea00; }
+      100% { transform: scale(1); }
+    }
+
+    #progress-bar {
+      width: 80%;
+      height: 10px;
+      background: #333;
+      margin: 20px auto;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    #progress {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(to right, #ffcc00, #ff4081);
+    }
+
+    #score, #badge {
+      margin-top: 10px;
+      font-size: 20px;
+    }
+
+    #share-panel {
+      display: none;
+      margin-top: 30px;
+    }
+    #poster {
+      width: 300px;
+      background: #fff;
+      color: #000;
+      padding: 20px;
+      margin: auto;
+      border-radius: 10px;
+    }
+    #poster img {
+      width: 80px;
+      margin: 10px auto;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>時光節拍 🎵</h1>
+
+  <div class="song-selector">
+    <button class="song-button" onclick="loadSong('甜蜜蜜')">甜蜜蜜</button>
+    <button class="song-button" onclick="loadSong('童年')">童年</button>
+    <button class="song-button" onclick="loadSong('男兒當自強')">男兒當自強</button>
+    <button class="song-button" onclick="loadSong('很愛很愛你')">很愛很愛你</button>
+    <button class="song-button" onclick="loadSong('瀟灑走一回')">瀟灑走一回</button>
+    <button class="song-button" onclick="loadSong('月亮代表我的心')">月亮代表我的心</button>
+  </div>
+
+  <div class="drum-container">
+    <div id="tap-area" class="drum">點擊節奏</div>
+  </div>
+
+  <div id="progress-bar">
+    <div id="progress"></div>
+  </div>
+
+  <div id="score">得分：0</div>
+  <div id="badge">🎖️ 成就：尚未獲得</div>
+
+  <audio id="song" preload="auto"></audio>
+
+  <div id="share-panel">
+    <div id="poster">
+      <h3>🎖️ 我在《時光節拍》</h3>
+      <p>完成歌曲：<span id="poster-song"></span></p>
+      <p>得分：<span id="poster-score"></span></p>
+      <img id="badge-img" src="medal.png" alt="金勳章" />
+      <p>#青春不老，節拍正響</p>
+    </div>
+    <button onclick="downloadPoster()">下載分享圖片</button>
+  </div>
+
+  <script>
+    let score = 0;
+    let chart = [];
+    let currentIndex = 0;
+    let currentSongTitle = '';
+    let gameStarted = false;
+    const tapArea = document.getElementById('tap-area');
+    const scoreDisplay = document.getElementById('score');
+    const badgeDisplay = document.getElementById('badge');
+    const song = document.getElementById('song');
+    const progressBar = document.getElementById('progress');
+
+    function loadSong(title) {
+      score = 0;
+      currentIndex = 0;
+      chart = [];
+      currentSongTitle = title;
+      scoreDisplay.innerText = '得分：0';
+      badgeDisplay.innerText = '🎖️ 成就：尚未獲得';
+      document.getElementById('share-panel').style.display = 'none';
+
+      song.src = `audio/${title}.mp3`;
+      fetch(`audio/${title}.json`)
+        .then(res => res.json())
+        .then(data => {
+          chart = data.filter(n => n.type === 'tap');
+          tapArea.onclick = () => {
+            if (!gameStarted) {
+              gameStarted = true;
+              song.play();
+              startGame();
+            } else {
+              handleTap();
+            }
+          };
+        });
+    }
+
+    function startGame() {
+      const startTime = performance.now();
+      function gameLoop(now) {
+        if (!song.paused) {
+          const currentTime = (now - startTime) / 1000;
+          progressBar.style.width = (song.currentTime / song.duration * 100) + '%';
+          while (currentIndex < chart.length && chart[currentIndex].time < currentTime - 1) {
+            currentIndex++;
+          }
+          requestAnimationFrame(gameLoop);
+        }
+      }
+      requestAnimationFrame(gameLoop);
+    }
+
+    function handleTap() {
+      const currentTime = song.currentTime;
+      const note = chart[currentIndex];
+      if (!note) return;
+      if (Math.abs(note.time - currentTime) < 0.5) {
+        score += 100;
+        scoreDisplay.innerText = `得分：${score}`;
+        currentIndex++;
+        updateBadge(score);
+      }
+    }
+
+    function updateBadge(score) {
+      let badge = '';
+      if (score >= 1200) badge = '🥇 金牌成就';
+      else if (score >= 800) badge = '🥈 銀牌成就';
+      else if (score >= 400) badge = '🥉 銅牌成就';
+      else badge = '🎖️ 成就：尚未獲得';
+      badgeDisplay.innerText = badge;
+    }
+
+    song.onended = () => {
+      gameStarted = false;
+      document.getElementById('poster-song').innerText = currentSongTitle;
+      document.getElementById('poster-score').innerText = score;
+      document.getElementById('badge-img').src =
+        score >= 1200 ? 'medal.png' :
+        score >= 800 ? 'silver.png' :
+        score >= 400 ? 'bronze.png' : 'none.png';
+      document.getElementById('share-panel').style.display = 'block';
+    };
+
+    function downloadPoster() {
+      const poster = document.getElementById('poster');
+      html2canvas(poster).then(canvas => {
+        const link = document.createElement('a');
+        link.download = '我的時光節拍勳章.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+  </script>
+</body>
+</html>
