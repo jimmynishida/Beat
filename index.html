@@ -6,44 +6,64 @@
   <title>時光節拍</title>
   <style>
     body {
-      background: #111;
+      margin: 0;
+      background: black;
       color: white;
       font-family: sans-serif;
-      text-align: center;
+      overflow: hidden;
+    }
+    #bg-carousel {
+      position: fixed;
+      z-index: -1;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      animation: bgScroll 40s infinite linear;
+      background-size: cover;
+      background-position: center;
+    }
+    @keyframes bgScroll {
+      0%   { background-image: url('bg1.jpg'); }
+      25%  { background-image: url('bg2.jpg'); }
+      50%  { background-image: url('bg3.jpg'); }
+      75%  { background-image: url('bg4.jpg'); }
+      100% { background-image: url('bg1.jpg'); }
     }
     .song-selector {
       margin-top: 20px;
+      z-index: 10;
+      position: relative;
+      text-align: center;
     }
     .song-button {
       background: #ff4081;
       border: none;
-      margin: 10px;
+      margin: 5px;
       padding: 10px 20px;
       border-radius: 20px;
       cursor: pointer;
       color: white;
     }
     #tap-area {
-      width: 200px;
-      height: 200px;
+      width: 180px;
+      height: 180px;
       margin: 30px auto;
       border-radius: 50%;
-      background: radial-gradient(#ffc107, #ff9800);
+      background: radial-gradient(#03a9f4, #01579b);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 20px;
       cursor: pointer;
-      transition: transform 0.1s ease;
-    }
-    #tap-area:active {
-      transform: scale(0.95);
+      transition: transform 0.15s ease, background 0.2s ease;
+      box-shadow: 0 0 20px rgba(0,191,255,0.5);
     }
     #progress-bar {
       width: 80%;
       margin: auto;
       height: 10px;
-      background: #444;
+      background: #ccc;
       border-radius: 5px;
       overflow: hidden;
     }
@@ -53,8 +73,9 @@
       background: #ff4081;
     }
     #score {
-      margin-top: 10px;
+      margin: 10px auto;
       font-size: 18px;
+      text-align: center;
     }
     #medal {
       width: 120px;
@@ -62,7 +83,7 @@
       display: none;
     }
     #share-btn {
-      background: #2196f3;
+      background: #4caf50;
       color: white;
       padding: 8px 16px;
       margin: 10px;
@@ -74,7 +95,8 @@
   </style>
 </head>
 <body>
-  <h1>時光節拍 🎶</h1>
+  <div id="bg-carousel"></div>
+
   <div class="song-selector">
     <button class="song-button" onclick="loadSong('甜蜜蜜')">甜蜜蜜</button>
     <button class="song-button" onclick="loadSong('童年')">童年</button>
@@ -164,10 +186,12 @@
         score += 100;
         scoreDisplay.innerText = "得分：" + score;
         currentIndex++;
-        tapArea.style.background = "radial-gradient(#fff176, #f57f17)";
+        tapArea.style.transform = "scale(1.2)";
+        tapArea.style.background = "radial-gradient(#00e5ff, #2962ff)";
         setTimeout(() => {
-          tapArea.style.background = "radial-gradient(#ffc107, #ff9800)";
-        }, 150);
+          tapArea.style.transform = "scale(1)";
+          tapArea.style.background = "radial-gradient(#03a9f4, #01579b)";
+        }, 180);
       }
     }
 
